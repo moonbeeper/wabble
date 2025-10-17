@@ -1,0 +1,23 @@
+[package]
+name = "wabble"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+axum = { version = "0.8.6", features = ["http2", "ws"] }
+tokio = { version = "1.48.0", features = [
+    "macros",
+    "rt-multi-thread",
+    "signal",
+    "sync",
+    "tracing",
+] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+
+[profile.dist]
+inherits = "release"
+lto = "fat"
+debug = false
+strip = true
