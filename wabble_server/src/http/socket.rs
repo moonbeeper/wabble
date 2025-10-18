@@ -1,9 +1,9 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use axum::{
     extract::{
         State, WebSocketUpgrade,
-        ws::{self, Message, WebSocket},
+        ws::{self, WebSocket},
     },
     response::IntoResponse,
 };
@@ -13,7 +13,7 @@ use uuid::Uuid;
 use crate::{
     global::{ActiveConnectionGuard, GlobalState},
     responses::{self, Opcode, SocketComms, SocketResponse},
-    room::{MessagePersona, Persona, Room, RoomMessage, RoomRx, RoomTx},
+    room::{MessagePersona, Persona, Room, RoomMessage, RoomSubscription},
 };
 
 #[derive(Debug)]
@@ -23,8 +23,7 @@ struct SocketConnection {
     persona: Persona,
     global: Arc<GlobalState>,
     _guard: ActiveConnectionGuard,
-    current_room: Option<Room>,
-    room_rx: Option<RoomRx>,
+    room_subscription: Option<RoomSubscription>,
 }
 
 impl SocketConnection {
@@ -35,8 +34,7 @@ impl SocketConnection {
             persona: Persona::default(),
             global,
             _guard: guard,
-            current_room: None,
-            room_rx: None,
+            room_subscription: None,
         }
     }
 
@@ -68,12 +66,19 @@ impl SocketConnection {
                             self.handle_message(data).await;
                         }
                         Some(Ok(_)) => {}
-                        Some(Err(e)) => tracing::debug!("client disconnected abruptly: {e}"),
-                        None => break,
+                        Some(Err(e)) => {
+                            tracing::debug!("client disconnected abruptly: {e}");
+                            self.leave_room().await;
+                        },
+                        None => {
+                            tracing::debug!("client disconnected gracefully");
+                            self.leave_room().await;
+                            break;
+                        },
                     }
                 }
                 msg = async {
-                    match &mut self.room_rx {
+                    match &mut self.room_subscription {
                         Some(rx) => rx.recv().await,
                         None => std::future::pending().await, // never resolves
                     }
@@ -94,7 +99,7 @@ impl SocketConnection {
                         }
                         Err(broadcast::error::RecvError::Closed) => {
                             tracing::debug!("room broadcast channel closed for socket {}", self.id);
-                            self.room_rx = None;
+                            self.leave_room().await;
                         }
                     }
                 }
@@ -109,7 +114,7 @@ impl SocketConnection {
                 let persona: responses::Persona =
                     serde_json::from_value(data.data).expect("failed parsing persona");
 
-                tracing::debug!("received persona: {:#?}", persona);
+                tracing::debug!("received new persona");
                 self.persona = persona.into();
                 tracing::debug!("updated persona: {:#?}", self.persona);
             }
@@ -117,22 +122,19 @@ impl SocketConnection {
                 let room: responses::JoinRoom =
                     serde_json::from_value(data.data).expect("failed parsing join room schema");
                 tracing::debug!("received join room: {:#?}", room);
+                self.leave_room().await;
 
-                let room = self.global.get_room(&room.id.into());
+                let room = self.global.get_room(room.id.into());
                 if let Some(room) = room {
                     tracing::debug!("found room: {:#?}", room);
-                    // self.current_room = Some(room);
                     match room.subscribe() {
-                        Some(rx) => {
+                        Some(mut subscription) => {
                             tracing::debug!(
                                 "subscribed to room successfully, sending system message"
                             );
-                            _ = room.tx.send(RoomMessage::system(format!(
-                                "{} joined the room",
-                                self.persona.name
-                            )));
-                            self.room_rx = Some(rx);
-                            self.current_room = Some(room);
+                            _ = subscription.send_hello(&self.persona).await;
+
+                            self.room_subscription = Some(subscription)
                         }
                         None => {
                             tracing::debug!("room is full, cannot join")
@@ -146,17 +148,43 @@ impl SocketConnection {
 
                 tracing::debug!("received send message: {:#?}", msg);
 
-                let Some(ref room) = self.current_room else {
+                let Some(ref room) = self.room_subscription else {
                     tracing::debug!("no room joined, ignoring request");
                     return;
                 };
 
-                let _ = room.tx.send(RoomMessage {
+                let _ = room.send(RoomMessage {
                     persona: MessagePersona::from_persona(self.id, &self.persona),
                     message: msg.message,
                 });
             }
+            Opcode::CreateRoom => {
+                tracing::debug!("received create room request");
+                self.leave_room().await;
+
+                let room = self.global.insert_room(Room::new_private());
+                tracing::debug!("created and joining new private room with id {:?}", room.id);
+
+                match room.subscribe() {
+                    Some(mut subscription) => {
+                        tracing::debug!("subscribed to room successfully, sending system message");
+                        _ = subscription.send_hello(&self.persona).await;
+
+                        self.room_subscription = Some(subscription)
+                    }
+                    None => {
+                        tracing::debug!("room is full, cannot join")
+                    }
+                }
+            }
             _ => (),
+        }
+    }
+
+    async fn leave_room(&mut self) {
+        if let Some(mut room) = self.room_subscription.take() {
+            _ = room.send_bye(&self.persona).await;
+            tracing::debug!("socket {} is leaving room {}", self.id, room.room.id.id());
         }
     }
 }

@@ -1,5 +1,5 @@
 use std::{
-    ops::Deref,
+    str::FromStr,
     sync::{Arc, atomic::AtomicUsize},
 };
 
@@ -8,49 +8,45 @@ use tokio::sync::broadcast;
 
 const ROOM_MAX_CONNECTIONS: usize = 32;
 
-// #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, std::hash::Hash)]
-// pub enum RoomId {
-//     Public(uuid::Uuid),
-//     Private(uuid::Uuid),
-// }
-
-// impl RoomId {
-//     pub fn default_public() -> Vec<Self> {
-//         vec![
-//             Self::Public(uuid::uuid!("399e9bd9-6fab-4492-8d31-268e1fd4f34a")),
-//             Self::Public(uuid::uuid!("fe34f9a2-2782-4b42-9101-2b0fbea9e9a8")),
-//             Self::Public(uuid::uuid!("09e329ae-cbac-448e-a6ef-460575640a35")),
-//             Self::Public(uuid::uuid!("6ffbbccf-994f-4dd7-90ca-e2fadd027edd")),
-//         ]
-//     }
-
-//     pub fn id(&self) -> uuid::Uuid {
-//         match self {
-//             Self::Private(v) | Self::Public(v) => *v,
-//         }
-//     }
-// }
+macro_rules! ttid {
+    ($ttid:expr) => {{
+        match mtid::Ttid::from_str($ttid) {
+            Ok(u) => u,
+            Err(_) => panic!("invalid Ttid"),
+        }
+    }};
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, std::hash::Hash)]
-pub struct RoomId(uuid::Uuid);
+pub struct RoomId(mtid::Ttid);
+
+impl Default for RoomId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl RoomId {
     pub fn default_public() -> Vec<Self> {
         vec![
-            Self(uuid::uuid!("399e9bd9-6fab-4492-8d31-268e1fd4f34a")),
-            Self(uuid::uuid!("fe34f9a2-2782-4b42-9101-2b0fbea9e9a8")),
-            Self(uuid::uuid!("09e329ae-cbac-448e-a6ef-460575640a35")),
-            Self(uuid::uuid!("6ffbbccf-994f-4dd7-90ca-e2fadd027edd")),
+            Self(ttid!("0vt-5aw-m0y")),
+            Self(ttid!("njj-67c-hjx")),
+            Self(ttid!("x95-2jt-697")),
+            Self(ttid!("3q5-2wc-332")),
         ]
     }
 
-    pub fn id(&self) -> uuid::Uuid {
+    pub fn id(&self) -> mtid::Ttid {
         self.0
+    }
+
+    pub fn new() -> Self {
+        Self(mtid::Ttid::random())
     }
 }
 
-impl From<uuid::Uuid> for RoomId {
-    fn from(value: uuid::Uuid) -> Self {
+impl From<mtid::Ttid> for RoomId {
+    fn from(value: mtid::Ttid) -> Self {
         Self(value)
     }
 }
@@ -58,9 +54,58 @@ impl From<uuid::Uuid> for RoomId {
 pub type RoomTx = broadcast::Sender<RoomMessage>;
 pub type RoomRx = broadcast::Receiver<RoomMessage>;
 
+#[derive(Debug)]
+pub struct RoomSubscription {
+    pub rx: RoomRx,
+    pub room: Room,
+}
+
+impl Drop for RoomSubscription {
+    fn drop(&mut self) {
+        tracing::debug!(
+            "decrementing current active connections for room {}",
+            self.room.id.id()
+        );
+
+        self.room.dec_active_connections();
+    }
+}
+
+impl RoomSubscription {
+    pub fn send(
+        &self,
+        message: RoomMessage,
+    ) -> Result<usize, broadcast::error::SendError<RoomMessage>> {
+        self.room.tx.send(message)
+    }
+
+    pub async fn recv(&mut self) -> Result<RoomMessage, broadcast::error::RecvError> {
+        self.rx.recv().await
+    }
+
+    pub async fn send_hello(&mut self, persona: &Persona) {
+        match self.send(RoomMessage::system(format!(
+            "{} joined the room",
+            persona.name
+        ))) {
+            Ok(_) => {}
+            Err(broadcast::error::SendError(_)) => {
+                tracing::error!("failed to send hello message to room {}", self.room.id.id());
+            }
+        }
+    }
+
+    pub async fn send_bye(&mut self, persona: &Persona) {
+        let _ = self.send(RoomMessage::system(format!(
+            "{} left the room",
+            persona.name
+        )));
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Room {
-    pub id: uuid::Uuid,
+    pub id: RoomId,
     pub name: String, // generated only for public rooms, not for private ones. practically for show
     pub active_connections: Arc<AtomicUsize>,
     pub tx: RoomTx,
@@ -133,7 +178,7 @@ impl RoomMessage {
 }
 
 impl Room {
-    pub fn new(id: uuid::Uuid, name: String, is_public: bool, index: Option<usize>) -> Self {
+    pub fn new(id: RoomId, name: String, is_public: bool, index: Option<usize>) -> Self {
         let (tx, _rx) = broadcast::channel(ROOM_MAX_CONNECTIONS); // hardcoded max
         Self {
             id,
@@ -146,14 +191,23 @@ impl Room {
         }
     }
 
-    pub fn subscribe(&self) -> Option<RoomRx> {
+    pub fn new_private() -> Self {
+        let id = RoomId::new();
+        let name = format!("Private Room {}", &id.id().to_string()[..4]);
+        Self::new(id, name, false, None)
+    }
+
+    pub fn subscribe(&self) -> Option<RoomSubscription> {
         if self.current_connections() >= ROOM_MAX_CONNECTIONS {
             None
         } else {
             self.active_connections
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-            Some(self.tx.subscribe())
+            Some(RoomSubscription {
+                room: self.clone(),
+                rx: self.tx.subscribe(),
+            })
         }
     }
 
@@ -176,7 +230,7 @@ impl Room {
         let mut rooms = Vec::new();
         for (i, id) in room_ids.iter().enumerate() {
             let name = format!("Public Room {}", i + 1);
-            let room = Room::new(id.id(), name, true, Some(i));
+            let room = Room::new(*id, name, true, Some(i));
             rooms.push((*id, room))
         }
 

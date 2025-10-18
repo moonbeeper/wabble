@@ -1,12 +1,15 @@
 use std::{sync::Arc, time::Duration};
 
+use rand::Rng;
 use tokio::sync::oneshot;
 use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
 pub mod global;
 mod http;
-pub mod room;
 pub mod responses;
+pub mod room;
+
+const FACES: &[&str] = &[":)", ":D", ":P", ":3"]; // astetic facses
 
 #[tokio::main]
 async fn main() {
@@ -15,7 +18,8 @@ async fn main() {
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    tracing::info!("heelo world");
+    let face = FACES[rand::rng().random_range(0..FACES.len())];
+    tracing::info!("heelo world from wabble server {}", face);
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
     let global = Arc::new(global::GlobalState::new());

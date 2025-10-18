@@ -83,7 +83,15 @@ impl GlobalState {
         rooms
     }
 
-    pub fn get_room(&self, id: &RoomId) -> Option<Room> {
-        self.rooms.get(id).map(|v| v.value().clone())
+    pub fn get_room(&self, id: RoomId) -> Option<Room> {
+        self.rooms.get(&id).map(|v| v.value().clone())
+    }
+
+    pub fn insert_room(&self, room: Room) -> Room {
+        let id = room.id;
+        match self.rooms.insert(id, room) {
+            Some(_) => panic!("room id shouldn't be collide with existing one"),
+            None => self.rooms.get(&id).unwrap().value().clone(),
+        }
     }
 }

@@ -20,6 +20,7 @@ pub enum Opcode {
     JoinRoom = 2,
     SendMessage = 3,
     EchoMessage = 4,
+    CreateRoom = 5,
 }
 
 pub trait SocketResponse: std::fmt::Debug {
@@ -68,7 +69,7 @@ impl SocketResponse for Handshake {
 
 #[derive(Debug, serde::Serialize)]
 pub struct PublicRoomInfo {
-    pub id: uuid::Uuid,
+    pub id: mtid::Ttid,
     pub name: String,
     pub active_connections: usize,
     pub max_connections: usize,
@@ -77,7 +78,7 @@ pub struct PublicRoomInfo {
 impl From<&Room> for PublicRoomInfo {
     fn from(value: &Room) -> Self {
         Self {
-            id: value.id,
+            id: value.id.id(),
             name: value.name.clone(),
             active_connections: value.current_connections(),
             max_connections: value.max_connections,
@@ -108,7 +109,7 @@ impl From<Persona> for room::Persona {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct JoinRoom {
-    pub id: uuid::Uuid,
+    pub id: mtid::Ttid,
 }
 
 impl SocketResponse for JoinRoom {
@@ -151,5 +152,14 @@ impl From<room::RoomMessage> for EchoMessage {
                 color: value.persona.color,
             },
         }
+    }
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct CreateRoom;
+
+impl SocketResponse for CreateRoom {
+    fn opcode(&self) -> Opcode {
+        Opcode::CreateRoom
     }
 }

@@ -487,6 +487,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mtid"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e389f8a276e2a9284675b85c51dfce7a672f34607e454bbc10925cd6ca48f08"
+dependencies = [
+ "rand",
+ "serde",
+]
+
+[[package]]
 name = "nu-ansi-term"
 version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1031,6 +1041,7 @@ dependencies = [
  "axum",
  "dashmap",
  "futures-util",
+ "mtid",
  "rand",
  "random_color",
  "serde",
