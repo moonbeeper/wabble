@@ -1,17 +1,26 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use tokio::sync::oneshot;
+use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
+pub mod global;
 mod http;
+pub mod room;
+pub mod responses;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
+
     tracing::info!("heelo world");
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
+    let global = Arc::new(global::GlobalState::new());
 
-    let http_server = tokio::spawn(http::run(shutdown_rx));
+    let http_server = tokio::spawn(http::run(global, shutdown_rx));
 
     let shutdown = tokio::spawn(async move {
         tokio::signal::ctrl_c().await.ok();

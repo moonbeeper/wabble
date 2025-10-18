@@ -1,13 +1,29 @@
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::{
+    net::{Ipv4Addr, SocketAddrV4},
+    sync::Arc,
+};
 
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{any, get},
+};
 use tokio::{net::TcpSocket, sync::oneshot};
 
-fn routes() -> Router {
-    Router::new().route("/", get(|| async { "Hello, World!" }))
+use crate::global::GlobalState;
+
+mod socket;
+
+fn routes(global: &Arc<GlobalState>) -> Router {
+    Router::new()
+        .route("/", get(|| async { "Hello, World!" }))
+        .route("/socket", any(socket::handler))
+        .with_state(global.clone())
 }
 
-pub async fn run(shutdown_signal: oneshot::Receiver<()>) -> anyhow::Result<()> {
+pub async fn run(
+    global: Arc<GlobalState>,
+    shutdown_signal: oneshot::Receiver<()>,
+) -> anyhow::Result<()> {
     tracing::info!("Listening on http://127.0.0.1:8080");
 
     let socket = TcpSocket::new_v4()?;
@@ -21,7 +37,8 @@ pub async fn run(shutdown_signal: oneshot::Receiver<()>) -> anyhow::Result<()> {
     )))?;
     let listener = socket.listen(1024)?;
 
-    axum::serve(listener, routes())
+    let routes = routes(&global);
+    axum::serve(listener, routes)
         .with_graceful_shutdown(async move { _ = shutdown_signal.await })
         .await
         .expect("Failed to start the HTTP server");
