@@ -7,48 +7,50 @@ use axum::{
     },
     response::IntoResponse,
 };
+use tokio::sync::broadcast;
 use uuid::Uuid;
 
 use crate::{
     global::{ActiveConnectionGuard, GlobalState},
-    responses::{self, SocketResponse, TSocketResponse},
-    room::Persona,
+    responses::{self, Opcode, SocketComms, SocketResponse},
+    room::{MessagePersona, Persona, Room, RoomMessage, RoomRx, RoomTx},
 };
 
 #[derive(Debug)]
 struct SocketConnection {
     id: Uuid,
-    heartbeat: tokio::time::Interval,
     socket: WebSocket,
     persona: Persona,
     global: Arc<GlobalState>,
     _guard: ActiveConnectionGuard,
+    current_room: Option<Room>,
+    room_rx: Option<RoomRx>,
 }
 
 impl SocketConnection {
     fn new(socket: WebSocket, guard: ActiveConnectionGuard, global: Arc<GlobalState>) -> Self {
         Self {
             id: Uuid::new_v4(),
-            heartbeat: tokio::time::interval(Duration::from_secs(30)),
             socket,
             persona: Persona::default(),
             global,
             _guard: guard,
+            current_room: None,
+            room_rx: None,
         }
     }
 
-    async fn send(&mut self, data: impl TSocketResponse + serde::Serialize) {
-        // let data = serde_json::to_string(&data).expect("tragically failed to serialize data");
-
+    async fn send(&mut self, data: impl SocketResponse + serde::Serialize) {
         self.socket
-            .send(SocketResponse::new(data).into())
+            .send(SocketComms::new(data).into())
             .await
             .expect("failed to send message to socket");
     }
 
     async fn serve(&mut self) {
-        println!("{:#?}", self);
+        // TODO: handle serde and other errors by using the typical enum pattern
         self.send(responses::Handshake {
+            session_id: self.id,
             heartbeat_interval: 30,
             active_connections: self.global.get_active_connections(),
             public_rooms: self.global.get_rooms().iter().map(|r| r.into()).collect(),
@@ -61,14 +63,100 @@ impl SocketConnection {
                 res = self.socket.recv() => {
                     match res {
                         Some(Ok(ws::Message::Text(s))) => {
-                            tracing::debug!("received message: {}", s);
+                            let data = serde_json::from_str::<SocketComms>(s.as_str()).expect("failed parsing incoming data");
+                            tracing::debug!("received message: {:#?}", data);
+                            self.handle_message(data).await;
                         }
                         Some(Ok(_)) => {}
                         Some(Err(e)) => tracing::debug!("client disconnected abruptly: {e}"),
                         None => break,
                     }
                 }
+                msg = async {
+                    match &mut self.room_rx {
+                        Some(rx) => rx.recv().await,
+                        None => std::future::pending().await, // never resolves
+                    }
+                } => {
+                    match msg {
+                        Ok(broadcast_msg) => {
+                            tracing::debug!("broadcasting message to socket {}: {:?}", self.id, broadcast_msg);
+
+                            if broadcast_msg.persona.id == self.id {
+                                tracing::debug!("skipping echo message to self for socket {}", self.id);
+                                continue;
+                            }
+
+                            self.send(responses::EchoMessage::from(broadcast_msg)).await;
+                        }
+                        Err(broadcast::error::RecvError::Lagged(skipped)) => {
+                            tracing::warn!("socket {} lagged and skipped {} messages", self.id, skipped);
+                        }
+                        Err(broadcast::error::RecvError::Closed) => {
+                            tracing::debug!("room broadcast channel closed for socket {}", self.id);
+                            self.room_rx = None;
+                        }
+                    }
+                }
+
             }
+        }
+    }
+
+    async fn handle_message(&mut self, data: SocketComms) {
+        match data.opcode {
+            Opcode::Persona => {
+                let persona: responses::Persona =
+                    serde_json::from_value(data.data).expect("failed parsing persona");
+
+                tracing::debug!("received persona: {:#?}", persona);
+                self.persona = persona.into();
+                tracing::debug!("updated persona: {:#?}", self.persona);
+            }
+            Opcode::JoinRoom => {
+                let room: responses::JoinRoom =
+                    serde_json::from_value(data.data).expect("failed parsing join room schema");
+                tracing::debug!("received join room: {:#?}", room);
+
+                let room = self.global.get_room(&room.id.into());
+                if let Some(room) = room {
+                    tracing::debug!("found room: {:#?}", room);
+                    // self.current_room = Some(room);
+                    match room.subscribe() {
+                        Some(rx) => {
+                            tracing::debug!(
+                                "subscribed to room successfully, sending system message"
+                            );
+                            _ = room.tx.send(RoomMessage::system(format!(
+                                "{} joined the room",
+                                self.persona.name
+                            )));
+                            self.room_rx = Some(rx);
+                            self.current_room = Some(room);
+                        }
+                        None => {
+                            tracing::debug!("room is full, cannot join")
+                        }
+                    }
+                }
+            }
+            Opcode::SendMessage => {
+                let msg: responses::SendMessage =
+                    serde_json::from_value(data.data).expect("failed parsing send message schema");
+
+                tracing::debug!("received send message: {:#?}", msg);
+
+                let Some(ref room) = self.current_room else {
+                    tracing::debug!("no room joined, ignoring request");
+                    return;
+                };
+
+                let _ = room.tx.send(RoomMessage {
+                    persona: MessagePersona::from_persona(self.id, &self.persona),
+                    message: msg.message,
+                });
+            }
+            _ => (),
         }
     }
 }
@@ -84,20 +172,5 @@ pub async fn handler(
 
         let mut socket = SocketConnection::new(ws, guard, global);
         tokio::spawn(async move { socket.serve().await });
-        // loop {
-        //     tokio::select! {
-        //         // Since `ws` is a `Stream`, it is by nature cancel-safe.
-        //         res = ws.recv() => {
-        //             match res {
-        //                 Some(Ok(ws::Message::Text(s))) => {
-        //                     tracing::debug!("received message: {}", s);
-        //                 }
-        //                 Some(Ok(_)) => {}
-        //                 Some(Err(e)) => tracing::debug!("client disconnected abruptly: {e}"),
-        //                 None => break,
-        //             }
-        //         }
-        //     }
-        // }
     })
 }

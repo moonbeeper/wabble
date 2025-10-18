@@ -26,7 +26,7 @@ impl ActiveConnectionGuard {
 #[derive(Debug)]
 pub struct GlobalState {
     active_connections: Arc<AtomicUsize>,
-    rooms: DashMap<RoomId, Room>,
+    rooms: Arc<DashMap<RoomId, Room>>,
 }
 
 impl Default for GlobalState {
@@ -39,7 +39,7 @@ impl GlobalState {
     pub fn new() -> Self {
         tracing::debug!("creating global state");
 
-        let rooms = DashMap::new();
+        let rooms = Arc::new(DashMap::new());
         for (id, room) in Room::default_public() {
             rooms.insert(id, room);
         }
@@ -81,5 +81,9 @@ impl GlobalState {
         // index is always some for public DEFAULT rooms
         rooms.sort_by(|a, b| a.index.unwrap().cmp(&b.index.unwrap()));
         rooms
+    }
+
+    pub fn get_room(&self, id: &RoomId) -> Option<Room> {
+        self.rooms.get(id).map(|v| v.value().clone())
     }
 }

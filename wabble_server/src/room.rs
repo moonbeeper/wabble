@@ -8,31 +8,55 @@ use tokio::sync::broadcast;
 
 const ROOM_MAX_CONNECTIONS: usize = 32;
 
+// #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, std::hash::Hash)]
+// pub enum RoomId {
+//     Public(uuid::Uuid),
+//     Private(uuid::Uuid),
+// }
+
+// impl RoomId {
+//     pub fn default_public() -> Vec<Self> {
+//         vec![
+//             Self::Public(uuid::uuid!("399e9bd9-6fab-4492-8d31-268e1fd4f34a")),
+//             Self::Public(uuid::uuid!("fe34f9a2-2782-4b42-9101-2b0fbea9e9a8")),
+//             Self::Public(uuid::uuid!("09e329ae-cbac-448e-a6ef-460575640a35")),
+//             Self::Public(uuid::uuid!("6ffbbccf-994f-4dd7-90ca-e2fadd027edd")),
+//         ]
+//     }
+
+//     pub fn id(&self) -> uuid::Uuid {
+//         match self {
+//             Self::Private(v) | Self::Public(v) => *v,
+//         }
+//     }
+// }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, std::hash::Hash)]
-pub enum RoomId {
-    Public(uuid::Uuid),
-    Private(uuid::Uuid),
-}
+pub struct RoomId(uuid::Uuid);
 
 impl RoomId {
     pub fn default_public() -> Vec<Self> {
         vec![
-            Self::Public(uuid::uuid!("399e9bd9-6fab-4492-8d31-268e1fd4f34a")),
-            Self::Public(uuid::uuid!("fe34f9a2-2782-4b42-9101-2b0fbea9e9a8")),
-            Self::Public(uuid::uuid!("09e329ae-cbac-448e-a6ef-460575640a35")),
-            Self::Public(uuid::uuid!("6ffbbccf-994f-4dd7-90ca-e2fadd027edd")),
+            Self(uuid::uuid!("399e9bd9-6fab-4492-8d31-268e1fd4f34a")),
+            Self(uuid::uuid!("fe34f9a2-2782-4b42-9101-2b0fbea9e9a8")),
+            Self(uuid::uuid!("09e329ae-cbac-448e-a6ef-460575640a35")),
+            Self(uuid::uuid!("6ffbbccf-994f-4dd7-90ca-e2fadd027edd")),
         ]
     }
 
     pub fn id(&self) -> uuid::Uuid {
-        match self {
-            Self::Private(v) | Self::Public(v) => *v,
-        }
+        self.0
     }
 }
 
-type RoomTx = broadcast::Sender<String>;
-type RoomRx = broadcast::Receiver<String>;
+impl From<uuid::Uuid> for RoomId {
+    fn from(value: uuid::Uuid) -> Self {
+        Self(value)
+    }
+}
+
+pub type RoomTx = broadcast::Sender<RoomMessage>;
+pub type RoomRx = broadcast::Receiver<RoomMessage>;
 
 #[derive(Debug, Clone)]
 pub struct Room {
@@ -42,7 +66,7 @@ pub struct Room {
     pub tx: RoomTx,
     pub max_connections: usize,
     pub is_public: bool,
-    pub index: Option<usize>,
+    pub index: Option<usize>, // only for public rooms, indicates the order to display them lmao
 }
 
 #[derive(Debug)]
@@ -71,9 +95,11 @@ impl Default for Persona {
     }
 }
 
+#[derive(Debug, serde::Serialize, Clone)]
 pub struct MessagePersona {
-    pub id: uuid::Uuid,
+    pub id: uuid::Uuid, // differentiate users
     pub username: String,
+    //differentiate users if a use shares the same name by giving them a different color without letting them know
     pub color: String, // hex rrggbbaa
 }
 
@@ -87,9 +113,23 @@ impl MessagePersona {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct RoomMessage {
-    pub user: MessagePersona,
+    pub persona: MessagePersona,
     pub message: String, // client formats the message into lines
+}
+
+impl RoomMessage {
+    pub fn system(message: String) -> Self {
+        Self {
+            persona: MessagePersona {
+                id: uuid::Uuid::nil(),
+                username: "System".to_string(),
+                color: "0xEDA728FF".to_string(),
+            },
+            message,
+        }
+    }
 }
 
 impl Room {
