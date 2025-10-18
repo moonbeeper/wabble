@@ -9,14 +9,14 @@ pub struct ActiveConnectionGuard(Arc<AtomicUsize>);
 
 impl Drop for ActiveConnectionGuard {
     fn drop(&mut self) {
-        tracing::debug!("decrementing active connections");
+        tracing::debug!("decrementing global active connections");
         self.0.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
     }
 }
 
 impl ActiveConnectionGuard {
     pub fn new(active_connections: &Arc<AtomicUsize>) -> Self {
-        tracing::debug!("incrementing active connections");
+        tracing::debug!("incrementing global active connections");
         active_connections.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
         Self(active_connections.clone())

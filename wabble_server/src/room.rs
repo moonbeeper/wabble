@@ -1,10 +1,12 @@
 use std::{
     str::FromStr,
-    sync::{Arc, atomic::AtomicUsize},
+    sync::{Arc, Mutex, atomic::AtomicUsize},
 };
 
 use rand::Rng;
 use tokio::sync::broadcast;
+
+use crate::responses;
 
 const ROOM_MAX_CONNECTIONS: usize = 32;
 
@@ -58,6 +60,7 @@ pub type RoomRx = broadcast::Receiver<RoomMessage>;
 pub struct RoomSubscription {
     pub rx: RoomRx,
     pub room: Room,
+    pub persona: Arc<Mutex<Persona>>,
 }
 
 impl Drop for RoomSubscription {
@@ -68,6 +71,14 @@ impl Drop for RoomSubscription {
         );
 
         self.room.dec_active_connections();
+
+        let mut personas = self.room.personas.lock().unwrap();
+        let persona_id = self.persona.lock().unwrap().id;
+
+        personas.retain(|v| {
+            let v_id = v.lock().unwrap().id;
+            v_id != persona_id
+        });
     }
 }
 
@@ -101,6 +112,13 @@ impl RoomSubscription {
             persona.name
         )));
     }
+
+    pub async fn send_invite(&mut self, room_id: RoomId) {
+        let _ = self.send(RoomMessage::system(format!(
+            "Your room code is {} !",
+            room_id.id()
+        )));
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -112,30 +130,47 @@ pub struct Room {
     pub max_connections: usize,
     pub is_public: bool,
     pub index: Option<usize>, // only for public rooms, indicates the order to display them lmao
+    pub personas: Arc<Mutex<Vec<Arc<Mutex<Persona>>>>>, // oh god WHAT HAVE I DONE
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Persona {
+    pub id: uuid::Uuid,
     pub name: String,
-    pub color: String, // hex rrggbbaa
+    pub color: String, // hex
+    pub forced_color: Option<String>,
 }
 
-impl Default for Persona {
-    fn default() -> Self {
-        let numbers: Vec<String> = (0..12)
-            .map(|_| rand::rng().random_range(0..9))
-            .map(|n: u8| n.to_string())
-            .collect();
-        let name = format!("user{}", numbers.join(""));
+impl Persona {
+    pub fn random_color() -> String {
         let color = random_color::RandomColor {
             luminosity: Some(random_color::options::Luminosity::Light),
             ..Default::default()
         }
         .to_rgb_array();
+        format!("0x{:02X}{:02X}{:02X}FF", color[0], color[1], color[2])
+    }
+    pub fn new(id: uuid::Uuid) -> Self {
+        let numbers: Vec<String> = (0..12)
+            .map(|_| rand::rng().random_range(0..9))
+            .map(|n: u8| n.to_string())
+            .collect();
+        let name = format!("user{}", numbers.join(""));
 
         Self {
+            id,
             name,
-            color: format!("0x{:02X}{:02X}{:02X}FF", color[0], color[1], color[2],),
+            color: Persona::random_color(),
+            forced_color: None,
+        }
+    }
+
+    pub fn from_response(response: responses::Persona, id: uuid::Uuid) -> Self {
+        Self {
+            id,
+            name: response.name.clone(),
+            color: response.color.clone(),
+            forced_color: None,
         }
     }
 }
@@ -143,17 +178,22 @@ impl Default for Persona {
 #[derive(Debug, serde::Serialize, Clone)]
 pub struct MessagePersona {
     pub id: uuid::Uuid, // differentiate users
-    pub username: String,
+    pub name: String,
     //differentiate users if a use shares the same name by giving them a different color without letting them know
     pub color: String, // hex rrggbbaa
 }
 
 impl MessagePersona {
-    pub fn from_persona(id: uuid::Uuid, persona: &Persona) -> Self {
+    pub fn from_persona(persona: &Persona) -> Self {
+        println!("forced color: {:?}", persona.forced_color);
         Self {
-            id,
-            username: persona.name.clone(),
-            color: persona.color.clone(),
+            id: persona.id,
+            name: persona.name.clone(),
+            color: persona
+                .forced_color
+                .as_ref()
+                .unwrap_or(&persona.color)
+                .clone(),
         }
     }
 }
@@ -169,7 +209,7 @@ impl RoomMessage {
         Self {
             persona: MessagePersona {
                 id: uuid::Uuid::nil(),
-                username: "System".to_string(),
+                name: "System".to_string(),
                 color: "0xEDA728FF".to_string(),
             },
             message,
@@ -188,6 +228,7 @@ impl Room {
             max_connections: ROOM_MAX_CONNECTIONS,
             is_public,
             index,
+            personas: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -197,17 +238,64 @@ impl Room {
         Self::new(id, name, false, None)
     }
 
-    pub fn subscribe(&self) -> Option<RoomSubscription> {
+    pub async fn subscribe(&self, persona: Arc<Mutex<Persona>>) -> Option<RoomSubscription> {
         if self.current_connections() >= ROOM_MAX_CONNECTIONS {
             None
         } else {
             self.active_connections
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
+            let mut personas = self
+                .personas
+                .try_lock()
+                .expect("couldn't lock room's personas");
+
+            let name = persona
+                .try_lock()
+                .expect("failed to lock persona's name")
+                .name
+                .clone();
+            let collisions = personas
+                .iter()
+                .any(|v| v.try_lock().expect("failed to lock room's persona").name == name);
+
+            if collisions {
+                persona.lock().unwrap().forced_color = Some(Persona::random_color());
+            }
+
+            personas.push(persona.clone());
+
             Some(RoomSubscription {
                 room: self.clone(),
                 rx: self.tx.subscribe(),
+                persona,
             })
+        }
+    }
+
+    pub fn check_collisions(&self, persona: Arc<Mutex<Persona>>) {
+        let personas = self
+            .personas
+            .try_lock()
+            .expect("couldn't lock room's personas");
+
+        let this_persona = persona
+            .try_lock()
+            .expect("failed to lock persona's name")
+            .clone();
+        let has_collision = personas
+            .iter()
+            .filter(|v| v.try_lock().expect("failed to lock persona").id != this_persona.id) // Exclude self
+            .any(|v| v.try_lock().expect("failed to lock persona").name == this_persona.name);
+
+        let mut persona_guard = persona.try_lock().expect("failed to lock persona's name");
+        if has_collision {
+            tracing::debug!("collision found, adding forced color");
+            persona_guard.forced_color = Some(Persona::random_color());
+        } else {
+            tracing::debug!("no collision found, resetting forced color");
+
+            persona_guard.forced_color = None;
         }
     }
 

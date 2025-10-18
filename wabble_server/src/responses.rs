@@ -20,7 +20,7 @@ pub enum Opcode {
     JoinRoom = 2,
     SendMessage = 3,
     EchoMessage = 4,
-    CreateRoom = 5,
+    // CreateRoom = 5,
 }
 
 pub trait SocketResponse: std::fmt::Debug {
@@ -98,15 +98,6 @@ impl SocketResponse for Persona {
     }
 }
 
-impl From<Persona> for room::Persona {
-    fn from(value: Persona) -> room::Persona {
-        room::Persona {
-            name: value.name,
-            color: value.color,
-        }
-    }
-}
-
 #[derive(Debug, serde::Deserialize)]
 pub struct JoinRoom {
     pub id: mtid::Ttid,
@@ -148,18 +139,18 @@ impl From<room::RoomMessage> for EchoMessage {
             message: value.message,
             persona: MessagePersona {
                 id: value.persona.id,
-                username: value.persona.username,
+                name: value.persona.name,
                 color: value.persona.color,
             },
         }
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
-pub struct CreateRoom;
+// #[derive(Debug, serde::Deserialize)]
+// pub struct CreateRoom;
 
-impl SocketResponse for CreateRoom {
-    fn opcode(&self) -> Opcode {
-        Opcode::CreateRoom
-    }
-}
+// impl SocketResponse for CreateRoom {
+//     fn opcode(&self) -> Opcode {
+//         Opcode::CreateRoom
+//     }
+// }

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::{
     extract::{
@@ -20,7 +20,7 @@ use crate::{
 struct SocketConnection {
     id: Uuid,
     socket: WebSocket,
-    persona: Persona,
+    persona: Arc<Mutex<Persona>>,
     global: Arc<GlobalState>,
     _guard: ActiveConnectionGuard,
     room_subscription: Option<RoomSubscription>,
@@ -28,10 +28,11 @@ struct SocketConnection {
 
 impl SocketConnection {
     fn new(socket: WebSocket, guard: ActiveConnectionGuard, global: Arc<GlobalState>) -> Self {
+        let id = Uuid::new_v4();
         Self {
-            id: Uuid::new_v4(),
+            id,
             socket,
-            persona: Persona::default(),
+            persona: Arc::new(Mutex::new(Persona::new(id))),
             global,
             _guard: guard,
             room_subscription: None,
@@ -86,11 +87,10 @@ impl SocketConnection {
                     match msg {
                         Ok(broadcast_msg) => {
                             tracing::debug!("broadcasting message to socket {}: {:?}", self.id, broadcast_msg);
-
-                            if broadcast_msg.persona.id == self.id {
-                                tracing::debug!("skipping echo message to self for socket {}", self.id);
-                                continue;
-                            }
+                            // if broadcast_msg.persona.id == self.id {
+                            //     tracing::debug!("skipping echo message to self for socket {}", self.id);
+                            //     continue;
+                            // }
 
                             self.send(responses::EchoMessage::from(broadcast_msg)).await;
                         }
@@ -115,8 +115,16 @@ impl SocketConnection {
                     serde_json::from_value(data.data).expect("failed parsing persona");
 
                 tracing::debug!("received new persona");
-                self.persona = persona.into();
+                *self.persona.try_lock().expect("failed to lock persona") =
+                    Persona::from_response(persona, self.id);
                 tracing::debug!("updated persona: {:#?}", self.persona);
+
+                tracing::debug!("checking for name collisions in socket's current room");
+                if let Some(ref room_subscription) = self.room_subscription {
+                    room_subscription
+                        .room
+                        .check_collisions(self.persona.clone());
+                }
             }
             Opcode::JoinRoom => {
                 let room: responses::JoinRoom =
@@ -126,15 +134,43 @@ impl SocketConnection {
 
                 let room = self.global.get_room(room.id.into());
                 if let Some(room) = room {
-                    tracing::debug!("found room: {:#?}", room);
-                    match room.subscribe() {
+                    tracing::debug!("found the requested room");
+                    match room.subscribe(self.persona.clone()).await {
                         Some(mut subscription) => {
                             tracing::debug!(
                                 "subscribed to room successfully, sending system message"
                             );
-                            _ = subscription.send_hello(&self.persona).await;
+                            let persona = self
+                                .persona
+                                .try_lock()
+                                .expect("failed to lock persona")
+                                .clone();
+                            _ = subscription.send_hello(&persona).await;
 
                             self.room_subscription = Some(subscription)
+                        }
+                        None => {
+                            tracing::debug!("room is full, cannot join")
+                        }
+                    }
+                } else {
+                    let room = self.global.insert_room(Room::new_private());
+                    tracing::debug!("created and joining new private room with id {:?}", room.id);
+
+                    match room.subscribe(self.persona.clone()).await {
+                        Some(mut subscription) => {
+                            tracing::debug!(
+                                "subscribed to room successfully, sending system message"
+                            );
+                            let persona = self
+                                .persona
+                                .try_lock()
+                                .expect("failed to lock persona")
+                                .clone();
+                            _ = subscription.send_hello(&persona).await;
+                            _ = subscription.send_invite(room.id).await;
+
+                            self.room_subscription = Some(subscription);
                         }
                         None => {
                             tracing::debug!("room is full, cannot join")
@@ -153,29 +189,15 @@ impl SocketConnection {
                     return;
                 };
 
+                let persona = self
+                    .persona
+                    .try_lock()
+                    .expect("failed to lock socket's persona");
+
                 let _ = room.send(RoomMessage {
-                    persona: MessagePersona::from_persona(self.id, &self.persona),
+                    persona: MessagePersona::from_persona(&persona),
                     message: msg.message,
                 });
-            }
-            Opcode::CreateRoom => {
-                tracing::debug!("received create room request");
-                self.leave_room().await;
-
-                let room = self.global.insert_room(Room::new_private());
-                tracing::debug!("created and joining new private room with id {:?}", room.id);
-
-                match room.subscribe() {
-                    Some(mut subscription) => {
-                        tracing::debug!("subscribed to room successfully, sending system message");
-                        _ = subscription.send_hello(&self.persona).await;
-
-                        self.room_subscription = Some(subscription)
-                    }
-                    None => {
-                        tracing::debug!("room is full, cannot join")
-                    }
-                }
             }
             _ => (),
         }
@@ -183,7 +205,13 @@ impl SocketConnection {
 
     async fn leave_room(&mut self) {
         if let Some(mut room) = self.room_subscription.take() {
-            _ = room.send_bye(&self.persona).await;
+            let persona = self
+                .persona
+                .try_lock()
+                .expect("failed to lock persona")
+                .clone();
+            _ = room.send_bye(&persona).await;
+            drop(persona);
             tracing::debug!("socket {} is leaving room {}", self.id, room.room.id.id());
         }
     }
