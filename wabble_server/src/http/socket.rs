@@ -50,7 +50,6 @@ impl SocketConnection {
         // TODO: handle serde and other errors by using the typical enum pattern
         self.send(responses::Handshake {
             session_id: self.id,
-            heartbeat_interval: 30,
             active_connections: self.global.get_active_connections(),
             public_rooms: self.global.get_rooms().iter().map(|r| r.into()).collect(),
         })
@@ -159,6 +158,10 @@ impl SocketConnection {
                                 .expect("failed to lock persona")
                                 .clone();
                             _ = subscription.send_hello(&persona).await;
+
+                            if !room.is_public {
+                                _ = subscription.send_invite(room.id).await;
+                            }
 
                             self.room_subscription = Some(subscription)
                         }

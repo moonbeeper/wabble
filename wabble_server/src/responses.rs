@@ -58,7 +58,6 @@ impl<D: SocketResponse + serde::Serialize> From<SocketComms<D>> for Message {
 #[derive(Debug, serde::Serialize)]
 pub struct Handshake {
     pub session_id: uuid::Uuid,
-    pub heartbeat_interval: u16,
     pub active_connections: usize,
     pub public_rooms: Vec<PublicRoomInfo>,
 }

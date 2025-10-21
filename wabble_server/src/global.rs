@@ -2,7 +2,10 @@ use std::sync::{Arc, atomic::AtomicUsize};
 
 use dashmap::DashMap;
 
-use crate::room::{Room, RoomId};
+use crate::{
+    room::{Room, RoomId},
+    settings,
+};
 
 #[derive(Debug)]
 pub struct ActiveConnectionGuard(Arc<AtomicUsize>);
@@ -27,16 +30,11 @@ impl ActiveConnectionGuard {
 pub struct GlobalState {
     active_connections: Arc<AtomicUsize>,
     rooms: Arc<DashMap<RoomId, Room>>,
-}
-
-impl Default for GlobalState {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub settings: settings::Settings,
 }
 
 impl GlobalState {
-    pub fn new() -> Self {
+    pub fn new(settings: settings::Settings) -> Self {
         tracing::debug!("creating global state");
 
         let rooms = Arc::new(DashMap::new());
@@ -47,6 +45,7 @@ impl GlobalState {
         Self {
             active_connections: Arc::new(AtomicUsize::new(0)),
             rooms,
+            settings,
         }
     }
 

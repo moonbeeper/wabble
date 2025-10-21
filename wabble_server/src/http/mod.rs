@@ -1,7 +1,4 @@
-use std::{
-    net::{Ipv4Addr, SocketAddrV4},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use axum::{
     Router,
@@ -24,17 +21,14 @@ pub async fn run(
     global: Arc<GlobalState>,
     shutdown_signal: oneshot::Receiver<()>,
 ) -> anyhow::Result<()> {
-    tracing::info!("Listening on http://127.0.0.1:8080");
+    tracing::info!("Listening on http://{}", global.settings.http.bind);
 
     let socket = TcpSocket::new_v4()?;
 
     socket.set_reuseaddr(true)?;
     socket.set_nodelay(true)?;
 
-    socket.bind(std::net::SocketAddr::V4(SocketAddrV4::new(
-        Ipv4Addr::new(127, 0, 0, 1),
-        8080,
-    )))?;
+    socket.bind(global.settings.http.bind)?;
     let listener = socket.listen(1024)?;
 
     let routes = routes(&global);
