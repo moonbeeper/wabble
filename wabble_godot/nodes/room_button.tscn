@@ -1,0 +1,101 @@
+[gd_scene load_steps=10 format=3 uid="uid://dtbbt3546vaow"]
+
+[ext_resource type="Script" uid="uid://daro64flxhae1" path="res://scripts/room_button.gd" id="1_wsibb"]
+[ext_resource type="Texture2D" uid="uid://c00glp7kmpwoy" path="res://assets/room_icons.png" id="2_maptl"]
+[ext_resource type="Texture2D" uid="uid://bxiy2j7o0xb3n" path="res://assets/signal.png" id="3_maptl"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ekxnf"]
+bg_color = Color(1, 0.8352941, 0.63529414, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bqqt6"]
+bg_color = Color(0.83, 0.69554, 0.5312, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8ln24"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_rtw2f"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_maptl"]
+atlas = ExtResource("2_maptl")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nj0bn"]
+content_margin_left = 8.0
+content_margin_top = 0.0
+content_margin_right = 8.0
+content_margin_bottom = 0.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0, 0, 1)
+
+[node name="RoomButton" type="Button" node_paths=PackedStringArray("title", "room_pop", "room_icon", "room_pop_container")]
+custom_minimum_size = Vector2(420, 64)
+theme_override_styles/normal = SubResource("StyleBoxFlat_ekxnf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_bqqt6")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ekxnf")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_8ln24")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_rtw2f")
+script = ExtResource("1_wsibb")
+title = NodePath("HBoxContainer/RichTextLabel")
+room_pop = NodePath("HBoxContainer/CenterContainer/PanelContainer/HBoxContainer/Label")
+room_icon = NodePath("HBoxContainer/Icon")
+room_pop_container = NodePath("HBoxContainer/CenterContainer")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="Icon" type="TextureRect" parent="HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+texture = SubResource("AtlasTexture_maptl")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="HBoxContainer"]
+custom_minimum_size = Vector2(175, 48)
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/normal_font_size = 32
+text = "Public Room A"
+scroll_active = false
+vertical_alignment = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="HBoxContainer/CenterContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_nj0bn")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/CenterContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="ColorRect" type="TextureRect" parent="HBoxContainer/CenterContainer/PanelContainer/HBoxContainer"]
+modulate = Color(1, 0.937, 0.86, 1)
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+texture = ExtResource("3_maptl")
+
+[node name="Label" type="Label" parent="HBoxContainer/CenterContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 32
+text = "0/32"

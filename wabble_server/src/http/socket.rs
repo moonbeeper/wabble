@@ -111,8 +111,13 @@ impl SocketConnection {
     async fn handle_message(&mut self, data: SocketComms) {
         match data.opcode {
             Opcode::Persona => {
+                let Some(data) = data.data else {
+                    tracing::debug!("gotten empty request data, ignoring");
+                    return;
+                };
+
                 let persona: responses::Persona =
-                    serde_json::from_value(data.data).expect("failed parsing persona");
+                    serde_json::from_value(data).expect("failed parsing persona");
 
                 tracing::debug!("received new persona");
                 *self.persona.try_lock().expect("failed to lock persona") =
@@ -127,8 +132,12 @@ impl SocketConnection {
                 }
             }
             Opcode::JoinRoom => {
+                let Some(data) = data.data else {
+                    tracing::debug!("gotten empty request data, ignoring");
+                    return;
+                };
                 let room: responses::JoinRoom =
-                    serde_json::from_value(data.data).expect("failed parsing join room schema");
+                    serde_json::from_value(data).expect("failed parsing join room schema");
                 tracing::debug!("received join room: {:#?}", room);
                 self.leave_room().await;
 
@@ -179,8 +188,12 @@ impl SocketConnection {
                 }
             }
             Opcode::SendMessage => {
+                let Some(data) = data.data else {
+                    tracing::debug!("gotten empty request data, ignoring");
+                    return;
+                };
                 let msg: responses::SendMessage =
-                    serde_json::from_value(data.data).expect("failed parsing send message schema");
+                    serde_json::from_value(data).expect("failed parsing send message schema");
 
                 tracing::debug!("received send message: {:#?}", msg);
 
@@ -198,6 +211,32 @@ impl SocketConnection {
                     persona: MessagePersona::from_persona(&persona),
                     message: msg.message,
                 });
+            }
+            Opcode::WhoAmI => {
+                tracing::debug!("received who am i request");
+
+                let persona = self
+                    .persona
+                    .try_lock()
+                    .expect("failed to lock socket's persona")
+                    .clone();
+                let persona = responses::Persona::from(persona);
+
+                self.send(responses::WhoAmI { persona }).await;
+            }
+            Opcode::ServerPopulation => {
+                tracing::debug!("received server population request");
+                let pop = self.global.get_active_connections();
+
+                self.send(responses::ServerPopulation { pop }).await;
+            }
+            Opcode::PublicRoomStatus => {
+                tracing::debug!("received public room status request");
+
+                self.send(responses::PublicRoomStatus {
+                    public_rooms: self.global.get_rooms().iter().map(|r| r.into()).collect(),
+                })
+                .await;
             }
             _ => (),
         }

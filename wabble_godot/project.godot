@@ -10,6 +10,30 @@ config_version=5
 
 [application]
 
-config/name="Nuevo Proyecto de Juego"
+config/name="wabble_godot"
+run/main_scene="uid://c57o7qwio55jt"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://nodes/game_manager.tscn"
+SceneManager="*res://scripts/scene_manager.gd"
+
+[display]
+
+window/size/viewport_width=512
+window/size/viewport_height=780
+window/stretch/mode="viewport"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_super-wakatime/plugin.cfg")
+
+[gui]
+
+theme/custom_font="uid://bjh26j42nk6lv"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0

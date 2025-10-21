@@ -1,0 +1,135 @@
+[gd_scene load_steps=12 format=3 uid="uid://c57o7qwio55jt"]
+
+[ext_resource type="Script" uid="uid://dq88lafxajrwa" path="res://scripts/main_menu.gd" id="1_8ln24"]
+[ext_resource type="Shader" uid="uid://b8lx6gmkw1b4h" path="res://assets/shaders/background.gdshader" id="1_l6cm7"]
+[ext_resource type="PackedScene" uid="uid://dtbbt3546vaow" path="res://nodes/room_button.tscn" id="3_rtw2f"]
+[ext_resource type="PackedScene" uid="uid://bc1bvtr8jmnpk" path="res://nodes/panel_header.tscn" id="3_wu84c"]
+
+[sub_resource type="Gradient" id="Gradient_l6cm7"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ekxnf"]
+gradient = SubResource("Gradient_l6cm7")
+fill_from = Vector2(0.3, 0.8)
+fill_to = Vector2(0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ekxnf"]
+shader = ExtResource("1_l6cm7")
+shader_parameter/gradient = SubResource("GradientTexture2D_ekxnf")
+shader_parameter/circle_color = Color(1, 0.6862745, 0.3019608, 1)
+shader_parameter/circle_multiplier = 10.0
+shader_parameter/speed = 0.2
+shader_parameter/direction = Vector2(-1, -1)
+shader_parameter/rotation = Transform2D(1, -1, 1, 1, 0, 0)
+
+[sub_resource type="Gradient" id="Gradient_vue75"]
+colors = PackedColorArray(0.6784314, 0.6784314, 0.6784314, 1, 0.92099476, 0.9209946, 0.9209946, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_l6cm7"]
+gradient = SubResource("Gradient_vue75")
+fill_from = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wu84c"]
+bg_color = Color(1, 0.6862745, 0.3019608, 1)
+border_width_bottom = 4
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8ln24"]
+bg_color = Color(1, 0.937, 0.86, 1)
+border_width_top = 4
+border_color = Color(0, 0, 0, 1)
+
+[node name="Control" type="Control" node_paths=PackedStringArray("server_pop", "top_header", "room_container")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_8ln24")
+server_pop = NodePath("Headers/Bottomheader")
+top_header = NodePath("Headers/topheader")
+room_container = NodePath("Content/CenterContainer/container/dynamic vbox")
+
+[node name="TextureRect2" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0.8352941, 0.63529414, 1)
+
+[node name="TextureRect" type="TextureRect" parent="."]
+material = SubResource("ShaderMaterial_ekxnf")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_l6cm7")
+
+[node name="Headers" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="topheader" parent="Headers" instance=ExtResource("3_wu84c")]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wu84c")
+titleText = "Choose a Chat Room to join"
+titleColor = Color(1, 1, 1, 1)
+background_color = Color(1, 0.6862745, 0.3019608, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="Headers"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Bottomheader" parent="Headers" instance=ExtResource("3_wu84c")]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_8ln24")
+titleText = "Server Population: [wave]69[/wave]"
+is_bottom = true
+background_color = Color(1, 0.937, 0.86, 1)
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Content"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="container" type="VBoxContainer" parent="Content/CenterContainer"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="dynamic vbox" type="VBoxContainer" parent="Content/CenterContainer/container"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="static vbox" type="VBoxContainer" parent="Content/CenterContainer/container"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="RoomButton" parent="Content/CenterContainer/container/static vbox" instance=ExtResource("3_rtw2f")]
+layout_mode = 2
+current_title = "Private Room"
+current_type = 1
+should_hide_pop = true
+
+[node name="RoomButton2" parent="Content/CenterContainer/container/static vbox" instance=ExtResource("3_rtw2f")]
+layout_mode = 2
+current_title = "Settings"
+current_type = 2
+should_hide_pop = true

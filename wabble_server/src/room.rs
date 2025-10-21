@@ -115,7 +115,7 @@ impl RoomSubscription {
 
     pub async fn send_invite(&mut self, room_id: RoomId) {
         let _ = self.send(RoomMessage::system(format!(
-            "Your room code is {} !",
+            "Created a new room! Your room code is {} !",
             room_id.id()
         )));
     }

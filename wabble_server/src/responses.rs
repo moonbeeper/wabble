@@ -20,7 +20,9 @@ pub enum Opcode {
     JoinRoom = 2,
     SendMessage = 3,
     EchoMessage = 4,
-    // CreateRoom = 5,
+    WhoAmI = 6,
+    ServerPopulation = 7,
+    PublicRoomStatus = 8
 }
 
 pub trait SocketResponse: std::fmt::Debug {
@@ -31,14 +33,14 @@ pub trait SocketResponse: std::fmt::Debug {
 pub struct SocketComms<D = serde_json::Value> {
     #[serde(rename = "op")]
     pub opcode: Opcode,
-    pub data: D,
+    pub data: Option<D>,
 }
 
 impl<D: SocketResponse> SocketComms<D> {
     pub fn new(data: D) -> Self {
         Self {
             opcode: data.opcode(),
-            data,
+            data: Some(data),
         }
     }
 }
@@ -67,7 +69,7 @@ impl SocketResponse for Handshake {
     }
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct PublicRoomInfo {
     pub id: mtid::Ttid,
     pub name: String,
@@ -95,6 +97,19 @@ pub struct Persona {
 impl SocketResponse for Persona {
     fn opcode(&self) -> Opcode {
         Opcode::Persona
+    }
+}
+
+impl From<room::Persona> for Persona {
+    fn from(persona: room::Persona) -> Self {
+        Self {
+            name: persona.name.clone(),
+            color: persona
+                .forced_color
+                .as_ref()
+                .unwrap_or(&persona.color)
+                .clone(),
+        }
     }
 }
 
@@ -143,6 +158,39 @@ impl From<room::RoomMessage> for EchoMessage {
                 color: value.persona.color,
             },
         }
+    }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct WhoAmI {
+    pub persona: Persona,
+}
+
+impl SocketResponse for WhoAmI {
+    fn opcode(&self) -> Opcode {
+        Opcode::WhoAmI
+    }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct ServerPopulation {
+    pub pop: usize,
+}
+
+impl SocketResponse for ServerPopulation {
+    fn opcode(&self) -> Opcode {
+        Opcode::ServerPopulation
+    }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct PublicRoomStatus {
+    pub public_rooms: Vec<PublicRoomInfo>,
+}
+
+impl SocketResponse for PublicRoomStatus {
+    fn opcode(&self) -> Opcode {
+        Opcode::PublicRoomStatus
     }
 }
 

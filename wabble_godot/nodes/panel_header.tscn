@@ -1,0 +1,42 @@
+[gd_scene load_steps=4 format=3 uid="uid://bc1bvtr8jmnpk"]
+
+[ext_resource type="Texture2D" uid="uid://bgruwjk7v4kv7" path="res://assets/dither.png" id="1_fpx4s"]
+[ext_resource type="Script" uid="uid://dhxonvfeapdtu" path="res://scripts/panel_header.gd" id="1_s3omv"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vue75"]
+bg_color = Color(1, 0.6862745, 0.3019608, 1)
+border_width_bottom = 4
+border_color = Color(0, 0, 0, 1)
+
+[node name="PanelHeader" type="Panel" node_paths=PackedStringArray("_titleLabel", "_ditherTex")]
+custom_minimum_size = Vector2(512, 48)
+theme_override_styles/panel = SubResource("StyleBoxFlat_vue75")
+script = ExtResource("1_s3omv")
+_titleLabel = NodePath("CenterContainer/RichTextLabel")
+_ditherTex = NodePath("dither")
+
+[node name="dither" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 512.0
+offset_bottom = 44.0
+pivot_offset = Vector2(256, 22)
+texture = ExtResource("1_fpx4s")
+expand_mode = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="CenterContainer"]
+custom_minimum_size = Vector2(512, 48)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 32
+bbcode_enabled = true
+text = "Hello world"
+scroll_active = false
+horizontal_alignment = 1
+vertical_alignment = 1
