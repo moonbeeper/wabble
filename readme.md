@@ -33,3 +33,8 @@ Just like the backend, you can run the Godot client from the (godot) editor or u
 If you wanted to run the client on the editor, I am using the v4.5.stable.official version of Godot. Aaaand, that's it open the project, click play and you're good to go!
 
 Remember that you can switch the websocket address in the `scripts/game_manager.gd` file if you want to use a different server than the one I am hosting.
+
+## Demo
+
+https://github.com/user-attachments/assets/40dbd50d-f16a-4d3a-ac99-e123e9c59596
+
