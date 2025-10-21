@@ -118,7 +118,6 @@ impl SocketConnection {
 
                 let persona: responses::Persona =
                     serde_json::from_value(data).expect("failed parsing persona");
-
                 tracing::debug!("received new persona");
                 let current_persona = self
                     .persona

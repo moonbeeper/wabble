@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://cb4m7mjuj4pyy"]
+
+[ext_resource type="Script" uid="uid://7mikij5a5cug" path="res://scripts/icon_button.gd" id="1_63pxf"]
+[ext_resource type="Texture2D" uid="uid://b8uhisdwymrf4" path="res://assets/closeicon.png" id="2_qeyqu"]
+
+[node name="IconButton" type="Button" node_paths=PackedStringArray("iconTex")]
+custom_minimum_size = Vector2(32, 32)
+script = ExtResource("1_63pxf")
+iconTex = NodePath("TextureRect")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -15.0
+offset_top = -15.0
+offset_right = 15.0
+offset_bottom = 15.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_qeyqu")
+expand_mode = 2
+stretch_mode = 5
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]

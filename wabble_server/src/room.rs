@@ -178,6 +178,10 @@ impl Persona {
 
         if response.name.as_ref().is_some_and(|x| x.is_empty())
             || response.name.as_ref().is_some_and(|x| x.len() < 3)
+            // yeaah shitty filtering
+            || response.name.as_ref().is_some_and(|x| x.to_lowercase().contains("system"))
+            || response.name.as_ref().is_some_and(|x| x.to_lowercase().contains("server"))
+            || response.name.as_ref().is_some_and(|x| x.to_lowercase().contains("admin"))
         {
             name = current_persona.name.clone()
         }

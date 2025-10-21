@@ -89,3 +89,22 @@ func do_pop_tween(tween: Tween, who: Node):
 	tween = get_tree().create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(who, "modulate", Color(1.3, 1.3, 1.3, 1.0), 0.1).from_current()
 	tween.chain().tween_property(who, "modulate", Color(1, 1, 1, 1), 0.2).from(Color(1.5,1.5,1.5,1))
+
+func _on_exit_pressed() -> void:
+	GameManager.join_room("", true)
+	SceneManager.swap_scene("res://scenes/main_menu.tscn", self)
+
+func _on_pencil_button_pressed() -> void:
+	note_card.set_draw_mode(NoteCard.DrawMode.DRAW)
+
+func _on_eraser_button_pressed() -> void:
+	note_card.set_draw_mode(NoteCard.DrawMode.ERASE)
+
+func _on_medium_brush_pressed() -> void:
+	note_card.set_both_thickness(2.0)
+
+func _on_big_brush_pressed() -> void:
+	note_card.set_both_thickness(4.0)
+
+func _on_bigger_brush_pressed() -> void:
+	note_card.set_both_thickness(8.0)

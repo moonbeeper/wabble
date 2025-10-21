@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://dkokomxb3ux2x"]
+[gd_scene load_steps=38 format=3 uid="uid://dkokomxb3ux2x"]
 
 [ext_resource type="Script" uid="uid://bhp6wb1pbdrt5" path="res://scripts/chat.gd" id="1_eycpi"]
 [ext_resource type="Shader" uid="uid://b8lx6gmkw1b4h" path="res://assets/shaders/background.gdshader" id="2_itoet"]
@@ -8,10 +8,15 @@
 [ext_resource type="PackedScene" uid="uid://c736uoqr6uqrj" path="res://nodes/note.tscn" id="4_eycpi"]
 [ext_resource type="Script" uid="uid://b7h0k2h2qwlqv" path="res://addons/SmoothScroll/scroll_damper/expo_scroll_damper.gd" id="5_cn5tf"]
 [ext_resource type="Texture2D" uid="uid://d0dbpe17i1cq1" path="res://assets/cornerbutton_left.png" id="5_qm2s6"]
+[ext_resource type="PackedScene" uid="uid://cb4m7mjuj4pyy" path="res://nodes/icon_button.tscn" id="5_ygtwt"]
 [ext_resource type="Texture2D" uid="uid://nta5qpkhkg0o" path="res://assets/sendicon.png" id="6_5b8w0"]
 [ext_resource type="Texture2D" uid="uid://dxfxhn6c745td" path="res://assets/cornerbutton_center.png" id="6_nqevj"]
+[ext_resource type="Texture2D" uid="uid://bpq1gkw0ycxrt" path="res://assets/penicon.png" id="6_u3aax"]
 [ext_resource type="Texture2D" uid="uid://nrjwkruqgofy" path="res://assets/cornerbutton_right.png" id="7_5b8w0"]
+[ext_resource type="Texture2D" uid="uid://drcgyog7po7kn" path="res://assets/erasericon.png" id="7_fwraf"]
 [ext_resource type="Texture2D" uid="uid://d1sa14khtgias" path="res://assets/geticon.png" id="8_aay2w"]
+[ext_resource type="Texture2D" uid="uid://b57tpm8rilphv" path="res://assets/penSizes.tres" id="8_ky4y1"]
+[ext_resource type="Texture2D" uid="uid://cbji6uoe8e3h" path="res://assets/penSizes.png" id="8_suxf1"]
 [ext_resource type="Texture2D" uid="uid://b5mvk3188761d" path="res://assets/eraseicon.png" id="10_w5fjd"]
 
 [sub_resource type="Gradient" id="Gradient_l6cm7"]
@@ -37,18 +42,26 @@ colors = PackedColorArray(0.6784314, 0.6784314, 0.6784314, 1, 0.92099476, 0.9209
 gradient = SubResource("Gradient_vue75")
 fill_from = Vector2(1, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cn5tf"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_suxf1"]
 bg_color = Color(1, 0.6862745, 0.3019608, 1)
 border_width_bottom = 4
 border_color = Color(0, 0, 0, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ygtwt"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4bwgy"]
 bg_color = Color(1, 0.6862745, 0.3019608, 1)
 border_width_bottom = 4
 border_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u3aax"]
 bg_color = Color(0.98, 0.98, 0.98, 1)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4bwgy"]
+atlas = ExtResource("8_suxf1")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l7fmx"]
+atlas = ExtResource("8_suxf1")
+region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="Resource" id="Resource_ygtwt"]
 script = ExtResource("5_cn5tf")
@@ -145,6 +158,7 @@ message_scroll = NodePath("Content/HBoxContainer/VBoxContainer/SmoothScrollConta
 send_button = NodePath("Content/HBoxContainer/VBoxContainer/MarginContainer/VBoxContainer/VBoxContainer/HBoxContainer/Send")
 get_button = NodePath("Content/HBoxContainer/VBoxContainer/MarginContainer/VBoxContainer/VBoxContainer/HBoxContainer/Get")
 erase_button = NodePath("Content/HBoxContainer/VBoxContainer/MarginContainer/VBoxContainer/VBoxContainer/HBoxContainer/Erase")
+metadata/_edit_horizontal_guides_ = [470.0]
 
 [node name="TextureRect2" type="ColorRect" parent="."]
 layout_mode = 1
@@ -191,7 +205,7 @@ grow_vertical = 2
 
 [node name="topheader" parent="Headers" instance=ExtResource("3_qm2s6")]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_cn5tf")
+theme_override_styles/panel = SubResource("StyleBoxFlat_suxf1")
 titleText = "Public Room ##~|43434134134"
 titleColor = Color(1, 1, 1, 1)
 background_color = Color(1, 0.6862745, 0.3019608, 1)
@@ -212,7 +226,7 @@ theme_override_constants/separation = 0
 [node name="topheader" parent="Content" instance=ExtResource("3_qm2s6")]
 modulate = Color(1, 1, 1, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ygtwt")
+theme_override_styles/panel = SubResource("StyleBoxFlat_4bwgy")
 titleText = "Public Room ##~|43434134134"
 titleColor = Color(1, 1, 1, 1)
 background_color = Color(1, 0.6862745, 0.3019608, 1)
@@ -223,9 +237,47 @@ size_flags_vertical = 3
 theme_override_constants/separation = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="Content/HBoxContainer"]
+clip_contents = true
 custom_minimum_size = Vector2(42, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_u3aax")
+
+[node name="CenterContainer" type="CenterContainer" parent="Content/HBoxContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Content/HBoxContainer/PanelContainer/CenterContainer"]
+custom_minimum_size = Vector2(0, 720)
+layout_mode = 2
+
+[node name="Exit" parent="Content/HBoxContainer/PanelContainer/CenterContainer/VBoxContainer" instance=ExtResource("5_ygtwt")]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Content/HBoxContainer/PanelContainer/CenterContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 288
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="PencilButton" parent="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2" instance=ExtResource("5_ygtwt")]
+layout_mode = 2
+iconTexture = ExtResource("6_u3aax")
+
+[node name="EraserButton" parent="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2" instance=ExtResource("5_ygtwt")]
+layout_mode = 2
+iconTexture = ExtResource("7_fwraf")
+
+[node name="MediumBrush" parent="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2" instance=ExtResource("5_ygtwt")]
+layout_mode = 2
+iconTexture = SubResource("AtlasTexture_4bwgy")
+
+[node name="BigBrush" parent="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2" instance=ExtResource("5_ygtwt")]
+layout_mode = 2
+iconTexture = SubResource("AtlasTexture_l7fmx")
+
+[node name="BiggerBrush" parent="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2" instance=ExtResource("5_ygtwt")]
+layout_mode = 2
+iconTexture = ExtResource("8_ky4y1")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Content/HBoxContainer"]
 layout_mode = 2
@@ -419,6 +471,12 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("10_w5fjd")
 
+[connection signal="pressed" from="Content/HBoxContainer/PanelContainer/CenterContainer/VBoxContainer/Exit" to="." method="_on_exit_pressed"]
+[connection signal="pressed" from="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2/PencilButton" to="." method="_on_pencil_button_pressed"]
+[connection signal="pressed" from="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2/EraserButton" to="." method="_on_eraser_button_pressed"]
+[connection signal="pressed" from="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2/MediumBrush" to="." method="_on_medium_brush_pressed"]
+[connection signal="pressed" from="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2/BigBrush" to="." method="_on_big_brush_pressed"]
+[connection signal="pressed" from="Content/HBoxContainer/PanelContainer/CenterContainer/MarginContainer/VBoxContainer2/BiggerBrush" to="." method="_on_bigger_brush_pressed"]
 [connection signal="pressed" from="Content/HBoxContainer/VBoxContainer/MarginContainer/VBoxContainer/VBoxContainer/HBoxContainer/Send" to="." method="_on_send_pressed"]
 [connection signal="pressed" from="Content/HBoxContainer/VBoxContainer/MarginContainer/VBoxContainer/VBoxContainer/HBoxContainer/Get" to="." method="_on_get_pressed"]
 [connection signal="pressed" from="Content/HBoxContainer/VBoxContainer/MarginContainer/VBoxContainer/VBoxContainer/HBoxContainer/Erase" to="." method="_on_erase_pressed"]

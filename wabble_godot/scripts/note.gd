@@ -220,3 +220,7 @@ func is_drawing_empty() -> bool:
 			if img_pixel.a > 0.5:
 				return false
 	return true
+	
+func set_both_thickness(thickness: float) -> void:
+	draw_thickness = thickness
+	erase_thickness = thickness

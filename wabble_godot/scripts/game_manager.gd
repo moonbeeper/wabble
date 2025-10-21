@@ -175,10 +175,13 @@ func _from_color_enum(id: COLOR) -> Color:
 			return Color(0.984, 0.541, 0.984)
 
 func join_room(id: String, is_private: bool) -> void:
+	var this_id: String = id
+	if is_private:
+		this_id = "ded-adb-eef"
 	var message = {
 		"op": 2,
 		"data": {
-			"id": id
+			"id": this_id
 		}
 	}
 	socket.send_text(JSON.stringify(message))
