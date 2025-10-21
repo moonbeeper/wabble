@@ -33,3 +33,9 @@ func _on_global_tick_update():
 			tween.tween_property(button, "modulate", Color(1,1,1,1), .3).from(Color(1,1,1,0))
 			await tween.finished
 	already_shown_rooms = true
+
+
+func _on_settings_pressed() -> void:
+	server_pop.tween_hide()
+	top_header.tween_hide()
+	SceneManager.swap_scene("res://scenes/settings.tscn", self)

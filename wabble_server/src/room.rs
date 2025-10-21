@@ -148,7 +148,7 @@ impl Persona {
             ..Default::default()
         }
         .to_rgb_array();
-        format!("0x{:02X}{:02X}{:02X}FF", color[0], color[1], color[2])
+        format!("{:02X}{:02X}{:02X}FF", color[0], color[1], color[2])
     }
     pub fn new(id: uuid::Uuid) -> Self {
         let numbers: Vec<String> = (0..12)
@@ -165,11 +165,31 @@ impl Persona {
         }
     }
 
-    pub fn from_response(response: responses::Persona, id: uuid::Uuid) -> Self {
+    pub fn from_response(response: responses::Persona, current_persona: Persona) -> Self {
+        let mut name = response
+            .name
+            .clone()
+            .unwrap_or(current_persona.name.clone());
+        let mut color = response
+            .color
+            .clone()
+            .unwrap_or(current_persona.color.clone());
+
+        if response.name.as_ref().is_some_and(|x| x.is_empty())
+            || response.name.as_ref().is_some_and(|x| x.len() < 3)
+        {
+            name = current_persona.name.clone()
+        }
+
+        if response.color.as_ref().is_some_and(|x| x.is_empty())
+            || response.color.as_ref().is_some_and(|x| x.len() <= 6) // hex rrggbbaa
+        {
+            color = current_persona.color.clone()
+        }
         Self {
-            id,
-            name: response.name.clone(),
-            color: response.color.clone(),
+            id: current_persona.id,
+            name,
+            color,
             forced_color: None,
         }
     }

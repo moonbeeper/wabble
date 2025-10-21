@@ -120,8 +120,13 @@ impl SocketConnection {
                     serde_json::from_value(data).expect("failed parsing persona");
 
                 tracing::debug!("received new persona");
+                let current_persona = self
+                    .persona
+                    .try_lock()
+                    .expect("failed to lock persona")
+                    .clone();
                 *self.persona.try_lock().expect("failed to lock persona") =
-                    Persona::from_response(persona, self.id);
+                    Persona::from_response(persona, current_persona);
                 tracing::debug!("updated persona: {:#?}", self.persona);
 
                 tracing::debug!("checking for name collisions in socket's current room");
