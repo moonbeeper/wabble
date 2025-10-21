@@ -11,7 +11,7 @@ signal recieved_message(message: String, drawing: PackedByteArray, persona_name:
 
 var socket = WebSocketPeer.new()
 # the idea was to let the user change the uri but nope :)
-var websocket_uri = "ws://127.0.0.1:8080/socket"
+var websocket_uri = "wss://wabble.moonbeeper.hackclub.app/socket"
 var rooms: Array = []
 var server_population: int = 1
 var update_tick: Timer
