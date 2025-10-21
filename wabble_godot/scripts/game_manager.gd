@@ -174,9 +174,9 @@ func _from_color_enum(id: COLOR) -> Color:
 		_:
 			return Color(0.984, 0.541, 0.984)
 
-func join_room(id: String, is_private: bool) -> void:
+func join_room(id: String, is_private: bool, skip_id: bool) -> void:
 	var this_id: String = id
-	if is_private:
+	if skip_id:
 		this_id = "ded-adb-eef"
 	var message = {
 		"op": 2,

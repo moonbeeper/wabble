@@ -1,0 +1,256 @@
+[gd_scene load_steps=13 format=3 uid="uid://dy84k26lxd5s2"]
+
+[ext_resource type="Script" uid="uid://dln1j47wyhfep" path="res://scripts/private_room.gd" id="1_1qcl7"]
+[ext_resource type="Texture2D" uid="uid://blhcqnu3wlsic" path="res://assets/square.png" id="2_o2soy"]
+[ext_resource type="PackedScene" uid="uid://bc1bvtr8jmnpk" path="res://nodes/panel_header.tscn" id="3_fyeti"]
+[ext_resource type="Texture2D" uid="uid://c5linjtp3miee" path="res://assets/button.png" id="5_komj8"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ph42y"]
+bg_color = Color(0.48179013, 0.4817893, 0.48178947, 1)
+border_width_bottom = 4
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o2soy"]
+bg_color = Color(0.48179013, 0.4817893, 0.48178947, 1)
+border_width_top = 4
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fyeti"]
+bg_color = Color(1, 0.937, 0.86, 0.39607844)
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_gjs24"]
+texture = ExtResource("5_komj8")
+modulate_color = Color(0.92156863, 0.92156863, 0.92156863, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_am25x"]
+texture = ExtResource("5_komj8")
+modulate_color = Color(1, 0.8352941, 0.63529414, 1)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_es4n0"]
+load_path = "res://.godot/imported/button.png-c79155b6e84601a7c5a042250ad77b07.ctex"
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_gis3k"]
+texture = SubResource("CompressedTexture2D_es4n0")
+modulate_color = Color(0.83033526, 0.83033514, 0.83033514, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gjs24"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(1, 1, 1, 0)
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[node name="Control" type="Control" node_paths=PackedStringArray("top_header", "bottom_header")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1qcl7")
+top_header = NodePath("Headers/topheader")
+bottom_header = NodePath("Headers/Bottomheader")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.46229059, 0.46229059, 0.46229059, 1)
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -25.0
+offset_top = -25.0
+offset_right = 25.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_o2soy")
+stretch_mode = 1
+
+[node name="Headers" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="topheader" parent="Headers" instance=ExtResource("3_fyeti")]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ph42y")
+titleText = "Wabble Private Room"
+titleColor = Color(1, 1, 1, 1)
+background_color = Color(0.48179013, 0.4817893, 0.48178947, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="Headers"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Bottomheader" parent="Headers" instance=ExtResource("3_fyeti")]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_o2soy")
+titleText = ""
+is_bottom = true
+background_color = Color(0.48179013, 0.4817893, 0.48178947, 1)
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Content"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="container" type="VBoxContainer" parent="Content/CenterContainer"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="Content/CenterContainer/container"]
+layout_mode = 2
+
+[node name="Control" type="Control" parent="Content/CenterContainer/container/VBoxContainer2"]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Content/CenterContainer/container/VBoxContainer2/Control"]
+layout_mode = 0
+offset_right = 209.0
+offset_bottom = 25.0
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_fyeti")
+text = "Join an exisiting room"
+
+[node name="LineEdit" type="LineEdit" parent="Content/CenterContainer/container/VBoxContainer2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+placeholder_text = "Room ID (ded-adb-eef)"
+max_length = 16
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Content/CenterContainer/container/VBoxContainer2"]
+layout_mode = 2
+alignment = 1
+
+[node name="CancelJoin" type="Button" parent="Content/CenterContainer/container/VBoxContainer2/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_focus_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_am25x")
+theme_override_styles/hover = SubResource("StyleBoxTexture_gis3k")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/focus = SubResource("StyleBoxFlat_gjs24")
+text = "Cancel"
+
+[node name="ConfirmJoin" type="Button" parent="Content/CenterContainer/container/VBoxContainer2/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_focus_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_am25x")
+theme_override_styles/hover = SubResource("StyleBoxTexture_gis3k")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/focus = SubResource("StyleBoxFlat_gjs24")
+text = "Confirm"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Content/CenterContainer/container"]
+layout_mode = 2
+
+[node name="Control2" type="Control" parent="Content/CenterContainer/container/VBoxContainer"]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Content/CenterContainer/container/VBoxContainer/Control2"]
+layout_mode = 0
+offset_right = 209.0
+offset_bottom = 25.0
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_fyeti")
+text = "Create a new Private Room"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Content/CenterContainer/container/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="CancelCreate" type="Button" parent="Content/CenterContainer/container/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_focus_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_am25x")
+theme_override_styles/hover = SubResource("StyleBoxTexture_gis3k")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/focus = SubResource("StyleBoxFlat_gjs24")
+text = "Cancel"
+
+[node name="ConfirmCreate" type="Button" parent="Content/CenterContainer/container/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_focus_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.1943489, 0.19434947, 0.19434908, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_am25x")
+theme_override_styles/hover = SubResource("StyleBoxTexture_gis3k")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_gjs24")
+theme_override_styles/focus = SubResource("StyleBoxFlat_gjs24")
+text = "Confirm"
+
+[connection signal="text_changed" from="Content/CenterContainer/container/VBoxContainer2/LineEdit" to="." method="_on_line_edit_text_changed"]
+[connection signal="pressed" from="Content/CenterContainer/container/VBoxContainer2/HBoxContainer/CancelJoin" to="." method="_on_cancel_join_pressed"]
+[connection signal="pressed" from="Content/CenterContainer/container/VBoxContainer2/HBoxContainer/ConfirmJoin" to="." method="_on_confirm_join_pressed"]
+[connection signal="pressed" from="Content/CenterContainer/container/VBoxContainer/HBoxContainer2/CancelCreate" to="." method="_on_cancel_create_pressed"]
+[connection signal="pressed" from="Content/CenterContainer/container/VBoxContainer/HBoxContainer2/ConfirmCreate" to="." method="_on_confirm_create_pressed"]

@@ -84,6 +84,7 @@ func _on_pressed() -> void:
 	light_tween.chain().tween_property(self, "modulate", Color(1, 1, 1, 1), 0.2).from(Color(1.5,1.5,1.5,1))
 	
 	if current_type == TYPE.SETTINGS: return
-	var private = false if current_type == TYPE.PUBLIC else true
-	GameManager.join_room(room_id, private)
+	if current_type == TYPE.PRIVATE:
+		GameManager.swap_scene.emit("res://scenes/private_room.tscn")
+	GameManager.join_room(room_id, false, false)
 	GameManager.swap_scene.emit("res://scenes/chat.tscn")

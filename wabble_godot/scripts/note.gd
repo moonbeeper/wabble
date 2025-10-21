@@ -146,6 +146,8 @@ func _message_into_lines(message: String) -> Array[String]:
 	
 func set_accent(color: Color) -> void:
 	card_mask.modulate = color
+	username_bg.modulate = color
+	username_bg.modulate.darkened(0.2)
 	
 func get_drawing_rle() -> PackedByteArray:	
 	var result = PackedByteArray()

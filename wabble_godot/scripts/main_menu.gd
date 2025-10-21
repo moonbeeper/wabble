@@ -35,7 +35,6 @@ func _on_global_tick_update():
 			await tween.finished
 	already_shown_rooms = true
 
-
 func _on_settings_pressed() -> void:
 	server_pop.tween_hide()
 	top_header.tween_hide()

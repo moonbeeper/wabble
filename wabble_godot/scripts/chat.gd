@@ -30,7 +30,6 @@ func _ready() -> void:
 	
 	top_header.titleText = GameManager.current_room_title
 	top_header.tween_show()
-
 	
 func _on_send_pressed() -> void:
 	do_pop_tween(pop_tween1, send_button)
@@ -91,7 +90,7 @@ func do_pop_tween(tween: Tween, who: Node):
 	tween.chain().tween_property(who, "modulate", Color(1, 1, 1, 1), 0.2).from(Color(1.5,1.5,1.5,1))
 
 func _on_exit_pressed() -> void:
-	GameManager.join_room("", true)
+	GameManager.join_room("", true, true)
 	SceneManager.swap_scene("res://scenes/main_menu.tscn", self)
 
 func _on_pencil_button_pressed() -> void:
