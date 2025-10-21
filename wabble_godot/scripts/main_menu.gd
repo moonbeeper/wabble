@@ -10,6 +10,7 @@ var already_shown_rooms: bool = false
 
 func _ready() -> void:
 	GameManager.tick_update.connect(_on_global_tick_update)
+	GameManager.swap_scene.connect(_on_global_swap_scene)
 	server_pop.titleText = "Server Population: [wave]%s[/wave]" % GameManager.server_population
 	
 func _on_global_tick_update():
@@ -39,3 +40,8 @@ func _on_settings_pressed() -> void:
 	server_pop.tween_hide()
 	top_header.tween_hide()
 	SceneManager.swap_scene("res://scenes/settings.tscn", self)
+
+func _on_global_swap_scene(res: String) -> void:
+	server_pop.tween_hide()
+	top_header.tween_hide()
+	SceneManager.swap_scene(res, self)

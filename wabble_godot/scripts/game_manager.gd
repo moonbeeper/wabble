@@ -6,6 +6,8 @@ signal color_change(id: COLOR)
 signal update_persona
 signal socket_ready
 signal fetched_persona
+signal swap_scene(res: String)
+signal recieved_message(message: String, drawing: PackedByteArray, persona_name: String, persona_color: Color)
 
 var socket = WebSocketPeer.new()
 # the idea was to let the user change the uri but nope :)
@@ -20,6 +22,8 @@ var current_username: String = "user123456"
 
 var new_current_color: COLOR = COLOR.PURPLE
 var new_current_username: String
+
+var current_room_title: String = "Unknown room"
 
 enum COLOR {
 	RED, ORANGE, PURPLE, LIGHT_GREEN, GREEN, LIGHT_BLUE, BLUE, NOTBLUE
@@ -74,6 +78,7 @@ func handle_message(packet_text: String) -> void:
 				server_population = recieved_data.get("active_connections", 1)
 				rooms = recieved_data.get("public_rooms", []) 
 				socket_ready.emit()
+				send_opcode(6)
 				_on_update_tick()
 			7:
 				print("recieved server pop")
@@ -94,6 +99,23 @@ func handle_message(packet_text: String) -> void:
 				print(current_color)
 				print(current_username)
 				fetched_persona.emit()
+			4:
+				print("recieved echo message")
+				var recieved_data = data.get("data", {})
+				print(data)
+				var message = recieved_data.get("message", "")
+				var persona = recieved_data.get("persona", {})
+				var persona_name = persona.get("name", "unknown_usr")
+				var raw_persona_color = persona.get("color", "FFFFFFFF")
+				var persona_color = Color.from_string(raw_persona_color, Color(1,1,1,1))
+				var raw_drawing = recieved_data.get("drawing", "")
+				if SceneManager.in_progress_transition: await SceneManager.scene_ready
+				if raw_drawing != null and raw_drawing is String and raw_drawing != "":
+					var drawing = Marshalls.base64_to_raw(raw_drawing)
+					recieved_message.emit(message, drawing, persona_name, persona_color)
+				else:
+					recieved_message.emit(message, PackedByteArray(), persona_name, persona_color)
+
 			_:
 				print("unknown opcode recieved: ", opcode)
 	else:
@@ -151,3 +173,40 @@ func _from_color_enum(id: COLOR) -> Color:
 			return Color(0.188, 0.729, 0.953)
 		_:
 			return Color(0.984, 0.541, 0.984)
+
+func join_room(id: String, is_private: bool) -> void:
+	var message = {
+		"op": 2,
+		"data": {
+			"id": id
+		}
+	}
+	socket.send_text(JSON.stringify(message))
+	var room_info = null
+	for room in rooms:
+		if room.get("id") == id:
+			room_info = room
+			break
+	print(room_info)
+	if room_info:
+		current_room_title = room_info.get("name", "Unknown room")
+		print("Joined room: ", current_room_title)
+	else:
+		if is_private:
+			current_room_title = "Private room :o"
+		else:
+			print("Room not found!")
+
+func signal_swap_scene(res: String) -> void:
+	swap_scene.emit(res)
+	
+func send_message(message: String, drawing: PackedByteArray) -> void:
+	var base_drawing = Marshalls.raw_to_base64(drawing)
+	var payload = {
+		"op": 3,
+		"data": {
+			"message": message,
+			"drawing": base_drawing
+		}
+	}
+	socket.send_text(JSON.stringify(payload))

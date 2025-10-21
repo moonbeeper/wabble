@@ -43,7 +43,8 @@ enum TYPE {
 	get:
 		return should_hide_pop
 		
-var room_id: String = ""
+@export var room_id: String = ""
+var light_tween: Tween
 
 func _ready() -> void:
 	update_stuff()
@@ -73,3 +74,16 @@ func update_stuff() -> void:
 		room_pop_container.visible = false
 	else:
 		room_pop_container.visible = true
+
+
+func _on_pressed() -> void:
+	if light_tween && light_tween.is_running():
+		light_tween.kill()
+	light_tween = get_tree().create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.tween_property(self, "modulate", Color(1.3, 1.3, 1.3, 1.0), 0.1).from_current()
+	light_tween.chain().tween_property(self, "modulate", Color(1, 1, 1, 1), 0.2).from(Color(1.5,1.5,1.5,1))
+	
+	if current_type == TYPE.SETTINGS: return
+	var private = false if current_type == TYPE.PUBLIC else true
+	GameManager.join_room(room_id, private)
+	GameManager.swap_scene.emit("res://scenes/chat.tscn")

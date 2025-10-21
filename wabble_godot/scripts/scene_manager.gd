@@ -12,6 +12,7 @@ var resource_timer_ping: Timer
 var resource_loops_icon: int = 0
 
 signal scene_loaded(scene: Node)
+signal scene_ready
 
 func _ready() -> void:
 	scene_loaded.connect(_on_scene_loaded)
@@ -71,4 +72,5 @@ func _on_scene_loaded(scene: Node) -> void:
 	loading_screen.queue_free()
 	
 	in_progress_transition = false
+	scene_ready.emit()
 	

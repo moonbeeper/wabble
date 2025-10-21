@@ -122,11 +122,12 @@ custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 alignment = 1
 
-[node name="RoomButton" parent="Content/CenterContainer/container/static vbox" instance=ExtResource("3_rtw2f")]
+[node name="PrivateRoom" parent="Content/CenterContainer/container/static vbox" instance=ExtResource("3_rtw2f")]
 layout_mode = 2
 current_title = "Private Room"
 current_type = 1
 should_hide_pop = true
+room_id = "ded-adb-eef"
 
 [node name="Settings" parent="Content/CenterContainer/container/static vbox" instance=ExtResource("3_rtw2f")]
 layout_mode = 2

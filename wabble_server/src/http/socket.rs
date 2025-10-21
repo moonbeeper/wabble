@@ -212,9 +212,14 @@ impl SocketConnection {
                     .try_lock()
                     .expect("failed to lock socket's persona");
 
+                let mut message = msg.message;
+                if message.len() > 165 {
+                    message = message.chars().take(165).collect()
+                }
                 let _ = room.send(RoomMessage {
                     persona: MessagePersona::from_persona(&persona),
-                    message: msg.message,
+                    message,
+                    drawing: msg.drawing,
                 });
             }
             Opcode::WhoAmI => {

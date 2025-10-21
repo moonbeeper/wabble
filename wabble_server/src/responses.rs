@@ -129,7 +129,7 @@ impl SocketResponse for JoinRoom {
 #[derive(Debug, serde::Deserialize)]
 pub struct SendMessage {
     pub message: String,
-    pub drawing: Option<Vec<u8>>, // optional drawing data, probably RLE encoded to tinify it
+    pub drawing: Option<String>, // optional drawing data, probably RLE encoded to tinify it
 }
 
 impl SocketResponse for SendMessage {
@@ -141,6 +141,7 @@ impl SocketResponse for SendMessage {
 #[derive(Debug, serde::Serialize)]
 pub struct EchoMessage {
     pub message: String,
+    pub drawing: Option<String>,
     pub persona: MessagePersona,
 }
 
@@ -154,6 +155,7 @@ impl From<room::RoomMessage> for EchoMessage {
     fn from(value: room::RoomMessage) -> Self {
         Self {
             message: value.message,
+            drawing: value.drawing,
             persona: MessagePersona {
                 id: value.persona.id,
                 name: value.persona.name,

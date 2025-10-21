@@ -13,6 +13,7 @@ config_version=5
 config/name="wabble_godot"
 run/main_scene="uid://c57o7qwio55jt"
 config/features=PackedStringArray("4.5", "Forward Plus")
+boot_splash/use_filter=false
 config/icon="res://icon.svg"
 
 [autoload]
@@ -28,7 +29,7 @@ window/stretch/mode="viewport"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_super-wakatime/plugin.cfg")
+enabled=PackedStringArray("res://addons/SmoothScroll/plugin.cfg", "res://addons/godot_super-wakatime/plugin.cfg")
 
 [gui]
 
